@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     rhs = setRHS2D(rhs, dx, dy, nX, nY);
 
     /* Call Solver (and measure execution time) */
+    printf("Iterating...  \n");
     t1 = omp_get_wtime();
 
     u = solvePoisson2D(u, rhs, dx, dy, nX, nY);
@@ -53,8 +54,8 @@ int main(int argc, char *argv[]) {
     writeGridData(X0, XL, Y0, YL, dx, dy, nX, nY, "output/gridData.txt");
     writeFileOutput(u, nX, nY, "output/output.txt");
 
-    /* Say goodbye */
-    printf("Done! Time: %f\n", t2-t1);
+    /* Report execution time */
+    printf("Execution Time: %f seconds.\n", t2-t1);
 
     /* Free Memory */
     free_array2D_contiguous(u);

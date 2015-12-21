@@ -98,10 +98,12 @@ double residual(double **u, double **rhs, double dx, double dy, int nX, int nY) 
     return res;
 }
 
-/* Iterates until solution with desired accuracy is found */
+/* Iterates until solution with desired accuracy is found 
+   or until it reaches "maxIterations".
+*/
 double **solvePoisson2D(double **array2D, double **rhs, double dx, double dy, int nX, int nY)
 {
-    int i, j, t, nIterations, iterationsPerCheck;
+    int i, j, t, nIterations, iterationsPerCheck, maxIterations;
     double res, tolerance;
     double **array2D_old;
     
@@ -109,7 +111,8 @@ double **solvePoisson2D(double **array2D, double **rhs, double dx, double dy, in
     array2D_old = array2D_contiguous (nX, nY);
 
     /* Iterate until residual < tolerance */
-    tolerance = nX*nY*pow(10, -6);
+    tolerance = nX*nY*pow(10, -9);
+    maxIterations = 1000000;
     nIterations = 0;
     iterationsPerCheck = 10;
     do {
@@ -129,13 +132,16 @@ double **solvePoisson2D(double **array2D, double **rhs, double dx, double dy, in
         // Calculate residual
         res = residual(array2D, rhs, dx, dy, nX, nY);
 
-        // test-remove
-        printf("iteration %d: residual = %f\ttolerance: %f\n", nIterations, res, tolerance);
+        // Test print for residual every "iterationsPerCheck"
+        //printf("iteration %d: residual = %f\ttolerance: %f\n", nIterations, res, tolerance);
 
-        
-    } while (res > tolerance);
+    } while (res > tolerance && nIterations <= maxIterations);
 
-    printf("Iterations: %d\n", nIterations);
+    /* Print number of iterations needed */
+    printf("Done! Iterations required: %d\n", nIterations);
+    if(nIterations>=maxIterations) {
+        printf("Warning: Maximum number of iterations reached! (%d)\n", maxIterations);
+    }
 
     free_array2D_contiguous(array2D_old);
     return array2D;
