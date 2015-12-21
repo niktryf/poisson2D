@@ -153,10 +153,10 @@ double **solvePoisson2D(double **array2D, double **rhs, double dx, double dy, in
             //array2D = jacobiIteration2D(array2D, array2D_old, rhs, nX, nY, dx, dy);
 
             // Do one Gauss-Seidel iteration 
-            array2D = gaussSeidelIteration2D(array2D, rhs, nX, nY, dx, dy);
+            //array2D = gaussSeidelIteration2D(array2D, rhs, nX, nY, dx, dy);
 
             // Do one SOR iteration
-            //array2D = SORIteration2D(array2D, rhs, nX, nY, dx, dy);
+            array2D = SORIteration2D(array2D, rhs, nX, nY, dx, dy);
 
             nIterations += 1;
         }
