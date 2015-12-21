@@ -1,0 +1,6 @@
+# X - Y domain: Xstart Xend Ystart Yend : 
+0.000000 1.000000 0.000000 1.000000
+# step size dx, dy: 
+0.020000 0.020000
+# number of grid points in X and Y dimensions: 
+51 51
