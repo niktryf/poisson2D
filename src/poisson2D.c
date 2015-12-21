@@ -59,6 +59,34 @@ double **gaussSeidelIteration2D(double **u, double **f,
     return u;
 }
 
+/* - Successive Overrelaxation (SOR)
+   Performs a single SOR iteration over the 2D domain.
+   Value for w (overrelaxation factor) is set inside the function.
+   From R. Leveque, ch. 4.2.2: optimal w for Poisson equation
+   is 2-2*pi*h.
+
+   Does NOT assume that dx = dy.
+ */
+double **SORIteration2D(double **u, double **f, 
+                            int nX, int nY, double dx, double dy)
+{
+    int i, j;
+    
+    double w = 2.0-2.0*M_PI*dx;
+
+    for(i=1;i<nX-1;i++) {
+        for(j=1;j<nY-1;j++) {
+
+            u[i][j] = w*((dy*dy)*(u[i-1][j] + u[i+1][j]) + 
+                             (dx*dx)*(u[i][j-1] + u[i][j+1]) - 
+                             (dx*dx)*(dy*dy)*f[i][j])/(2.0*((dx*dx) + (dy*dy))) +
+                      (1.0-w)*u[i][j];
+        }
+    }
+
+    return u;
+}
+
 
 /********************************************
  Iterative Methods End
@@ -126,6 +154,9 @@ double **solvePoisson2D(double **array2D, double **rhs, double dx, double dy, in
 
             // Do one Gauss-Seidel iteration 
             array2D = gaussSeidelIteration2D(array2D, rhs, nX, nY, dx, dy);
+
+            // Do one SOR iteration
+            //array2D = SORIteration2D(array2D, rhs, nX, nY, dx, dy);
 
             nIterations += 1;
         }
