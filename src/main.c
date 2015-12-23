@@ -15,6 +15,7 @@
 #include "../headers/memory.h"
 #include "../headers/setup.h"
 #include "../headers/poisson2D.h"
+#include "../headers/iterative.h"
 #include "../headers/io.h"
 
 #include "../headers/definitions.h"
@@ -22,6 +23,7 @@
 int main(int argc, char *argv[]) {
     int nX, nY, i, j;
     double **u, **rhs;
+    double **(*iterativeMethod)(double **, double **, double, double, int, int);
     double dx, dy;
     double t1, t2;
 
@@ -42,11 +44,15 @@ int main(int argc, char *argv[]) {
     /* RHS */
     rhs = setRHS2D(rhs, dx, dy, nX, nY);
 
+    /*** Choose iterative method from "iterative.h" ***/
+    iterativeMethod = &gaussSeidelIteration2D;
+    /**************************************************/
+
     /* Call Solver (and measure execution time) */
     printf("Iterating...  \n");
     t1 = omp_get_wtime();
 
-    u = solvePoisson2D(u, rhs, dx, dy, nX, nY);
+    u = solvePoisson2D(iterativeMethod, u, rhs, dx, dy, nX, nY);
 
     t2 = omp_get_wtime();
 

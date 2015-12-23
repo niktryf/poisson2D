@@ -1,6 +1,6 @@
 ### Compiler & flags
 CC=gcc
-CFLAGS=-c
+CFLAGS=-c -fopenmp 
 
 ### Directories
 SRC_DIR=src
@@ -13,7 +13,7 @@ EXEC=poisson2D
 ### Sources (in src directory)
 SOURCES=$(addprefix $(SRC_DIR)/, \
 	main.c io.c memory.c poisson2D.c \
-	setup.c)
+	setup.c iterative.c)
 
 ### Objects (in obj directory)
 OBJECTS=$(SOURCES:$(SRC_DIR)%.c=$(OBJ_DIR)%.o)

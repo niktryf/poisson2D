@@ -12,6 +12,10 @@
 
 #include "../headers/definitions.h"
 
+/*******************************************************************************
+ *** Boundary Conditions Function
+ *******************************************************************************/
+
 /* Function for Boundary Conditions fBC(x, y).
    Set desired function here:
 */
@@ -68,6 +72,10 @@ double **setBoundaries2D(double **array2D, double dx, double dy, int nX, int nY)
 
     return array2D;
 }
+
+/*******************************************************************************
+ *** Source (Right-Hand-Side) Function
+ *******************************************************************************/
 
 /* Right-Hand-Side function, f(x,y) */
 double f(double x, double y) 
