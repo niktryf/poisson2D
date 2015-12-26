@@ -13,8 +13,6 @@
 \date{2015}
 \maketitle
 
-\tableofcontents
-
 \begin{abstract}
 The current report summarizes the structure, use and results of a two-dimensional Poisson solver, 
 created for the purpose of being integrated into a 2D Particle-In-Cell (PIC) code. After a brief introduction 
@@ -23,12 +21,14 @@ described in chapter 2. Verification of the code will be given in chapter 3, thr
 Finally, the performance of the code will be discussed in chapter 4.
 \end{abstract}
 
+\tableofcontents
+
 \chapter{2D Poisson Equation: Numerical Solution}
 The Poisson Equation and the associated boundary conditions form what is generally known as a 
 \emph{Poisson Problem}: 
 
 \begin{equation}
-\nabla ^2 u = u_{xx} + u_{yy} = f(x,y).
+\nabla ^2 u = u_{xx} + u_{yy} = f(x,y)
 \end{equation}
 
 The Poisson Problem is one of the most well-known Elliptic Partial Differential Equations (PDE). A brief description of the numerical method followed in the code will be given here. Detailed analysis of the Poisson PDE and other methods can be found in most numerical analysis textbooks (for example [1]).
@@ -37,14 +37,14 @@ The Poisson Problem is one of the most well-known Elliptic Partial Differential 
 The 5-point stencil discretization scheme is followed. A uniform Cartesian grid is used, where each point $x_i, y_j$ describes a point in 2D space, with $x_i = i\Delta x$ and $y_j = j\Delta y$. We assume that $0 \leq x \leq 1$ and $0 \leq y \leq 1$ for simplicity. Replacing the derivatives $u_{xx}$ and $u_{yy}$ in (1.1) with centered finite difference schemes, we end up with the following discretization scheme:
 
 \begin{equation}
-\frac{1}{\Delta x}(u_{i-1,j} -2u_{i,j} + u_{i+1,j}) + 
-\frac{1}{\Delta y}(u_{i,j-1} -2u_{i,j} + u_{i,j+1}) = f_{i,j}.
+\frac{1}{(\Delta x)^2}(u_{i-1,j} -2u_{i,j} + u_{i+1,j}) + 
+\frac{1}{(\Delta y)^2}(u_{i,j-1} -2u_{i,j} + u_{i,j+1}) = f_{i,j}
 \end{equation}
 
 Assuming that $\Delta x = \Delta y = h$, we get the simple finite difference scheme
 
 \begin{equation}
-u_{i-1,j} + u_{i+1,j} + u_{i,j-1} + u_{i,j+1} - 4u_{i,j} = h^2 f_{i,j}.
+u_{i-1,j} + u_{i+1,j} + u_{i,j-1} + u_{i,j+1} - 4u_{i,j} = h^2 f_{i,j}
 \end{equation}
 
 For a grid of $N \times N$ points in total, this scheme gives a linear system of $(N-2) \times (N-2)$ equations for the $(N-2) \times (N-2)$ unknowns (the excluded values are the boundaries, which are considered known). As an example to illustrate the system of equations, suppose we have a $5 \times 5$ grid of points, including boundaries, that represent our 2D space. 
@@ -171,7 +171,7 @@ This linear system of equations can be solved with a variety of methods (direct,
 \section{Error and Stability}
 We will not go into the details of error and stability analysis in this report, since these are well-known 
 and can be found in most relevant texts (e.g. [1]). We should simply keep in mind that the local truncation error of the 5-point stencil finite difference scheme we are using is $O(h^2)$ and that the method is stable, so the global error of the method is also $O(h^2)$. In case we do not assume $\Delta x = \Delta y = h$, this 
-simply means that the error is $O((\Delta x)^2, (\Delta y)^2)$.
+simply means that the error is $O\left( (\Delta x)^2, (\Delta y)^2 \right)$.
 
 \chapter{The Code}
 In this chapter, the structure and use of the code will be described. The project has been arranged into 
