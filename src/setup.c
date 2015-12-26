@@ -1,10 +1,12 @@
 /*******************************************************************
- ***    poisson2D: Numerical solution of the Poisson PDE in 2D
- ***
+ ***    poisson2D: Numerical solution of the Poisson PDE in 2D.
  ***    Setup functions for Boundary Conditions and
  ***    Right-Hand-Side (RHS) function. 
  ***
- ***    Author: Nikos Tryfonidis
+ *** Author: Nikos Tryfonidis, December 2015
+ *** The MIT License (MIT)
+ *** Copyright (c) 2015 Nikos Tryfonidis
+ *** See LICENSE.txt
  *******************************************************************/
 #include <stdio.h>
 #include <stdlib.h>

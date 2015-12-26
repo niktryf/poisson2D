@@ -1,11 +1,14 @@
 /*******************************************************************
- ***    poisson2D: Numerical solution of the Poisson PDE in 2D
- ***
+ ***    poisson2D: Numerical solution of the Poisson PDE in 2D.
  ***    Iterative method functions, called by solvePoisson2D function
  ***    in poisson2D.c
  ***
- ***    Author: Nikos Tryfonidis
+ *** Author: Nikos Tryfonidis, December 2015
+ *** The MIT License (MIT)
+ *** Copyright (c) 2015 Nikos Tryfonidis
+ *** See LICENSE.txt
  *******************************************************************/
+
 #include <math.h>
 #include <omp.h>
 

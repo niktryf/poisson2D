@@ -1,11 +1,13 @@
 /*******************************************************************
- ***    poisson2D: Numerical solution of the Poisson PDE in 2D
+ ***    poisson2D: Numerical solution of the Poisson PDE in 2D.
  ***
  ***    Solver function and iterators.
  ***
- ***    Author: Nikos Tryfonidis
+ *** Author: Nikos Tryfonidis, December 2015
+ *** The MIT License (MIT)
+ *** Copyright (c) 2015 Nikos Tryfonidis
+ *** See LICENSE.txt
  *******************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -24,8 +26,8 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
     
     /* Set tolerance (value for residual considered adequate), 
        maximum iterations and iterations per residual check */
-    tolerance = nX*nY*pow(10, -10);
-    maxIterations = 1000000;
+    tolerance = 1.0*dx*dy; // Some multiple of expected accuracy of scheme
+    maxIterations = 100*nX*nY; // Some multiple of expected number of iterations to converge
     iterationsPerCheck = 100;
     nIterations = 0; //counter
 
@@ -54,7 +56,7 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
 }
 
 /* Residual function: Calculates the residual
-   after the application of relaxation
+   after the application of relaxation.
 */
 double residual(double **u, double **rhs, double dx, double dy, int nX, int nY) {
     int i, j;

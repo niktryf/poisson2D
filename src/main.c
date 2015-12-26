@@ -1,11 +1,14 @@
 /*******************************************************************
- ***    poisson2D: Numerical solution of the Poisson PDE in 2D
- ***
+ ***    poisson2D: Numerical solution of the Poisson PDE in 2D.
  ***    Solves (d^2/dx^2)u + (d^2/dy^2)u = f(x,y)
  ***    with given boundary conditions.
+ ***
  ***    See README.txt for details
  ***
- ***    Author: Nikos Tryfonidis
+ *** Author: Nikos Tryfonidis, December 2015
+ *** The MIT License (MIT)
+ *** Copyright (c) 2015 Nikos Tryfonidis
+ *** See LICENSE.txt
  *******************************************************************/
 
 #include <stdio.h>
@@ -18,6 +21,7 @@
 #include "../headers/iterative.h"
 #include "../headers/io.h"
 
+/* Definitions on space (x,y range) */
 #include "../headers/definitions.h"
 
 int main(int argc, char *argv[]) {
@@ -44,8 +48,11 @@ int main(int argc, char *argv[]) {
     /* RHS */
     rhs = setRHS2D(rhs, dx, dy, nX, nY);
 
-    /*** Choose iterative method from "iterative.h" ***/
+    /**************************************************
+     *** Choose iterative method from "iterative.h" ***
+     **************************************************/
     iterativeMethod = &gaussSeidelIteration2D;
+
     /**************************************************/
 
     /* Call Solver (and measure execution time) */

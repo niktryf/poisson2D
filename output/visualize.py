@@ -1,13 +1,9 @@
 ######################################################################
 ### Python script for visualizing results from poisson2D output
 ### 
-### User must enter 2 command line arguments, the step sizes 
-### for x and y respectively. These can be found in the gridData.txt
-### text file:
-### 
-### $ python visualize.py <dx> <dy>
-###
-### These are used to calculate the axis scales.
+### This script reads grid data from "gridData.txt". 
+### The user can simply run and create the 3D plot of the solution by:
+### $ python visualize.py
 ###
 ### Author: Nikos Tryfonidis
 ######################################################################
@@ -17,28 +13,22 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
+#################################################################################
+### Read Grid Data from "gridData.txt":
+#################################################################################
+with open('gridData.txt', 'r') as f:
+    for line in f:
+        strLine = line.split()
+        if strLine[0] == 'domain':
+            x_0, x_L, y_0, y_L = float(strLine[1]), float(strLine[2]), float(strLine[3]), float(strLine[4])
+        if strLine[0] == 'stepsize':
+            dx, dy = float(strLine[1]), float(strLine[2])
 
 #################################################################################
-### Command line arguments:
-#################################################################################
-
-# Check number of command line arguments
-if len(sys.argv) != 3:
-    print "Usage: python visualize.py <dx> <dy>"
-    print "Values for dx and dy can be found in file 'gridData.txt' "
-    print "Please run again following the command line input format above."
-    print "Exiting..."
-    sys.exit(1)
-
-# Get command line arguments
-dx = float(sys.argv[1])
-dy = float(sys.argv[2])
-#################################################################################
-
 
 # Read whole 2D array into list
-with open('output.txt') as file:
-    array2d = [[float(digit) for digit in line.split()] for line in file]
+with open('output.txt') as f:
+    array2d = [[float(digit) for digit in line.split()] for line in f]
 
 # Convert list to numpy array
 a = np.asarray(array2d)
@@ -49,8 +39,8 @@ ax = fig.add_subplot(111, projection='3d')
 fig.suptitle('Numerical Solution')
 
 # Set x, y (put grid dimensions and step size here)
-X = np.arange(0, 1 + dx, dx)
-Y = np.arange(0, 1 + dy, dy)
+X = np.arange(x_0, x_L + dx, dx)
+Y = np.arange(y_0, y_L + dy, dy)
 X, Y = np.meshgrid(X, Y)
 
 # Analytic solution for comparison (if known)

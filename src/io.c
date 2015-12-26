@@ -1,9 +1,11 @@
 /*******************************************************************
  ***    poisson2D: Numerical solution of the Poisson PDE in 2D
- ***
  ***    Input and Output functions.
  ***
- ***    Author: Nikos Tryfonidis
+ *** Author: Nikos Tryfonidis, December 2015
+ *** The MIT License (MIT)
+ *** Copyright (c) 2015 Nikos Tryfonidis
+ *** See LICENSE.txt
  *******************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,9 +43,9 @@ void writeGridData(double X0, double XL, double Y0, double YL,
     outputFile = fopen(filename_GridData, "w");
 
     /* Write Data */
-    fprintf(outputFile, "# X - Y domain: Xstart Xend Ystart Yend : \n%f %f %f %f\n", X0, XL, Y0, YL);
-    fprintf(outputFile, "# step size dx, dy: \n%f %f\n", dx, dy);
-    fprintf(outputFile, "# number of grid points in X and Y dimensions: \n%d %d\n", nX, nY);
+    fprintf(outputFile, "# X - Y domain: Xstart Xend Ystart Yend : \ndomain %f %f %f %f\n", X0, XL, Y0, YL);
+    fprintf(outputFile, "# step size dx, dy: \nstepsize %f %f\n", dx, dy);
+    fprintf(outputFile, "# number of grid points in X and Y dimensions: \npoints %d %d\n", nX, nY);
 
     /* Close Output File */
     fclose(outputFile);
