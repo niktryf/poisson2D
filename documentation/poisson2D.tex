@@ -1,6 +1,8 @@
 \documentclass[11pt]{report}
 \usepackage{amsmath, bm, xcolor, graphicx, listings}
 \usepackage{courier} %for listings
+\usepackage{caption}
+\usepackage{subcaption}
 \lstset{basicstyle=\footnotesize\ttfamily,breaklines=true} %listing font settings
 %\lstset{framextopmargin=50pt} %listing font settings
 \usepackage[english]{babel}
@@ -51,7 +53,7 @@ For a grid of $N \times N$ points in total, this scheme gives a linear system of
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.35]{grid}
+\includegraphics[scale=0.35]{images/grid}
 \caption{A $5 \times 5$ two-dimensional grid. 
 Boundary points, for which the solution is known, are shown in blue. }
 \label{fig:Space grid 5x5}
@@ -216,6 +218,7 @@ To solve a given Poisson problem, the user must perform the following actions:
 \begin{enumerate}
   \item Set Boundary Conditions in \emph{setBoundaries2D.c} (setup.c).
   \item Set the RHS function of the Poisson problem in \emph{setRHS2D.c} (setup.c).
+  \item Choose the desired iterative method in main function (main.c).
   \item Compile the program by typing "make" in the main directory (where the makefile is located).
   \item Run the executable with the desired number of grid points in each of the two dimensions.
 \end{enumerate}
@@ -246,7 +249,263 @@ python visualize.py
 \end{lstlisting}
 
 \chapter{Verification}
-(Under Construction)
+In this chapter we will verify the correctness of the 2D Poisson solver, through three basic examples that have known analytic solutions. By comparing the numerical solution with the analytic one, we will show that the solver produces correct results.
+\newline
+
+Each example has detailed instructions on how to set up the Poisson problem studied, so the following sections can also be used as examples on how to use the code. The \emph{Gauss-Seidel} iterative method was chosen for these examples, with a tolerance of $\Delta x^2$ for the residual check.
+\newline
+
+For the following examples, the domain was chosen to be $0 \leq x,y \leq 1$, which is set in \emph{headers/definitions.h} as follows:
+
+\begin{lstlisting}
+#define X0 0.0
+#define XL 1.0
+#define Y0 0.0
+#define YL 1.0
+\end{lstlisting}
+
+We also used 101 grid points for each dimension, dividing each dimension into $(101 - 1)$ pieces, so that 
+\begin{equation}
+\Delta x = \Delta y = (Length) / (101 - 1) = 1.0 / 100 = 0.01
+\end{equation}
+\newpage
+
+\section{Zero RHS (Laplace Equation)}
+In this problem, we will solve a Poisson problem with no right-hand-side function. Let us assume that the (known) solution $u(x,y)$ is 
+
+\begin{equation}
+u(x,y) = 3x + 4y
+\end{equation}
+
+The corresponding Poisson problem is then
+
+\begin{subequations}
+\begin{align}
+\nabla ^2 u = &u_{xx} + u_{yy} = 0 \\
+u(x,0) = 3x \quad \quad \quad & \quad \quad \quad u(x,y_L) = 3x + 4y_L \\
+u(0,y) = 4y \quad \quad \quad & \quad \quad \quad u(x_L,y) = 3x_L + 4y
+\end{align}
+\end{subequations}
+
+Equation $(3.2a)$, along with boundary conditions $(3.2b)$ and $(3.2c)$ are also known as a Laplace problem, a special case of the Poisson problem with a zero right-hand-side function. We will now solve this Poisson problem and compare the numerical solution with the analytic $(3.1)$.
+
+\subsection{Setting Up The Problem}
+As explained in paragraph \emph{2.4}, the functions that are used to set up the desired Poisson problem are in \emph{setup.c}. Boundary conditions are given by the known solution \emph{(3.1)}, while the RHS function is zero for this problem. 
+\newline
+
+We set the Boundary Conditions:
+
+\begin{lstlisting}
+double fBC(double x, double y) 
+{
+    return 3.0*x + 4.0*y;
+}
+\end{lstlisting}
+
+and the RHS function:
+
+\begin{lstlisting}
+double f(double x, double y) 
+{
+    return 0.0;
+}
+\end{lstlisting}
+
+\subsection{Running the Solver}
+After we set up the problem as shown, we compile the program by typing "make" in the main project directory. 
+Then, we simply run the program by specifying how many grid points we want to divide our domain into. 
+\newline 
+
+To specify 101 grid points for $x$ and $y$, we run the executables as follows:
+
+\begin{lstlisting}
+./poisson2D 101 101
+\end{lstlisting}
+
+Once the program has finished, output is ready in \emph{output/output.txt}. We can plot the solution by running the python script \emph{visualize.py}, which will create a 3D surface plot of our solution. In the next figure, the analytic and numerical solutions are shown side by side for comparison:
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example1_analytic}
+  \caption{Analytic solution}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example1_numerical}
+  \caption{Numerical solution}
+  \label{fig:sub2}
+\end{subfigure}
+\begin{subfigure}{0.6\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example1_error}
+  \caption{Error}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{Analytic (a) and numerical (b) solution for the current Poisson problem, with a surface plot of the  error in (c).}
+\label{fig:example1}
+\end{figure}
+
+We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $10^{-15}$. 
+
+\section{Simple Linear RHS}
+Now, we will solve a Poisson problem with a simple linear right-hand-side function. Let us assume that the (known) solution $u(x,y)$ is 
+
+\begin{equation}
+u(x,y) = x^2 + y^2
+\end{equation}
+
+The corresponding Poisson problem is now
+
+\begin{subequations}
+\begin{align}
+\nabla ^2 u = &u_{xx} + u_{yy} = 2 + 2 = 4 \\
+u(x,0) = x^2 \quad \quad \quad & \quad \quad \quad u(x,y_L) = x^2 + (y_L)^2 \\
+u(0,y) = y^2 \quad \quad \quad & \quad \quad \quad u(x_L,y) = (x_L)^2 + y^2
+\end{align}
+\end{subequations}
+
+We will now solve this Poisson problem and compare the numerical solution with the analytic $(3.4)$.
+
+\subsection{Setting Up The Problem}
+We set up the desired Poisson problem, as shown in the previous example, in \emph{setup.c}. Boundary conditions are given by the known solution \emph{(3.4)}, while the RHS function is equal to $4$ for this problem. 
+\newline
+
+We set the Boundary Conditions:
+
+\begin{lstlisting}
+double fBC(double x, double y) 
+{
+    return x*x + y*y;
+}
+\end{lstlisting}
+
+and the RHS function:
+
+\begin{lstlisting}
+double f(double x, double y) 
+{
+    return 4.0;
+}
+\end{lstlisting}
+
+\subsection{Running the Solver}
+We compile the program by typing "make" in the main project directory and run, once again, with 101 grid points in each dimension, as before:
+\newline 
+
+\begin{lstlisting}
+./poisson2D 101 101
+\end{lstlisting}
+
+We produce the surface plot of the results with \emph{visualize.py}. In the next figure, the analytic and numerical solutions are shown side by side for comparison:
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example2_analytic}
+  \caption{Analytic solution}
+  \label{fig:sub2.1}
+\end{subfigure}%
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example2_numerical}
+  \caption{Numerical solution}
+  \label{fig:sub2.2}
+\end{subfigure}
+\begin{subfigure}{0.6\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example2_error}
+  \caption{Error}
+  \label{fig:sub2.3}
+\end{subfigure}
+\caption{Analytic (a) and numerical (b) solution for the current Poisson problem, with a surface plot of the  error in (c).}
+\label{fig:example2}
+\end{figure}
+
+We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $10^{-16}$. 
+
+\newpage
+\section{Sinusoidal RHS}
+Now, we will solve a Poisson problem with a slightly more complex right-hand-side function. Let us assume that the (known) solution $u(x,y)$ is 
+
+\begin{equation}
+u(x,y) = sin\left[ 2\pi \left( x + y\right) \right]
+\end{equation}
+
+The corresponding Poisson problem is now
+
+\begin{subequations}
+\begin{align}
+\nabla ^2 u = u_{xx} + u_{yy} &= -8\pi^2 sin\left[ 2\pi \left( x + y\right) \right] \\
+u(x,0) = sin\left[ 2\pi \left( x \right) \right] \quad \quad & \quad \quad 
+u(x,y_L) = sin\left[ 2\pi \left( x + y_L\right) \right]\\
+u(0,y) =  sin\left[ 2\pi \left( y \right) \right] \quad \quad & \quad \quad 
+u(x_L,y) =  sin\left[ 2\pi \left( x_L + y\right) \right]
+\end{align}
+\end{subequations}
+
+We will now solve this Poisson problem and compare the numerical solution with the analytic $(3.6)$.
+
+\subsection{Setting Up The Problem}
+We set up the desired Poisson problem, as shown in the previous examples, in \emph{setup.c}. Boundary conditions are given by the known solution \emph{(3.6)}, while the RHS function is $f(x,y) =  -8\pi^2 sin\left[ 2\pi \left( x + y\right) \right]$ for this problem. 
+\newline
+
+We set the Boundary Conditions:
+
+\begin{lstlisting}
+double fBC(double x, double y) 
+{
+    return sin(2.0*M_PI*(x+y));
+}
+\end{lstlisting}
+
+and the RHS function:
+
+\begin{lstlisting}
+double f(double x, double y) 
+{
+    return -8.0*M_PI*M_PI*sin(2.0*M_PI*(x+y));
+}
+\end{lstlisting}
+
+\subsection{Running the Solver}
+We compile the program and run with 101 grid points in each dimension, as before:
+\newline 
+
+\begin{lstlisting}
+./poisson2D 101 101
+\end{lstlisting}
+
+We produce the surface plot of the results with \emph{visualize.py}. In the next figure, the analytic and numerical solutions are shown side by side for comparison:
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example3_analytic}
+  \caption{Analytic solution}
+  \label{fig:sub3.1}
+\end{subfigure}%
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example3_numerical}
+  \caption{Numerical solution}
+  \label{fig:sub3.2}
+\end{subfigure}
+\begin{subfigure}{0.6\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example3_error}
+  \caption{Error}
+  \label{fig:sub3.3}
+\end{subfigure}
+\caption{Analytic (a) and numerical (b) solution for the current Poisson problem, with a surface plot of the  error in (c).}
+\label{fig:example3}
+\end{figure}
+
+We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $O(h^2) = O(0.0001)$, where $h = \Delta x = \Delta y = 0.01$. 
 
 \chapter{Performance}
 (Under Construction)

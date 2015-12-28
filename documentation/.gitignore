@@ -1,4 +1,10 @@
-*
+*.aux
+*.log
+*~
+*.gz
+*.toc
+
 !.gitignore
 !*.pdf
 !*.tex
+!\images

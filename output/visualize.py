@@ -36,12 +36,13 @@ a = np.asarray(array2d)
 # Prepare Surface Plot
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-fig.suptitle('Numerical Solution')
+fig.suptitle('')
 
 # Set x, y (put grid dimensions and step size here)
 X = np.arange(x_0, x_L + dx, dx)
 Y = np.arange(y_0, y_L + dy, dy)
-X, Y = np.meshgrid(X, Y)
+# Invert Y, X to agree with program output (x, y convention)
+Y, X = np.meshgrid(X, Y)
 
 # Analytic solution for comparison (if known)
 #R = np.sin(2*np.pi*(X+Y))
@@ -58,6 +59,7 @@ ax.set_zlabel(r'$u$')
 
 #############################
 # Set z axis range
+#############################
 ax.set_zlim(np.amin(a), np.amax(a))
 
 plt.show()
