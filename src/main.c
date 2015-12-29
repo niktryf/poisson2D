@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     /**************************************************
      *** Choose iterative method from "iterative.h" ***
      **************************************************/
-    iterativeMethod = &gaussSeidelIteration2D;
+    iterativeMethod = &SORIteration2D;
 
     /**************************************************/
 

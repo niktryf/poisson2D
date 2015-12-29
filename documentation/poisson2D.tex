@@ -8,19 +8,22 @@
 \usepackage[english]{babel}
 \setlength\parindent{0pt} %remove indentation in new paragraphs
 
-\begin{document}
 
-\title{Poisson Solver (2D)}
+\begin{document}
+\title{\textbf{Poisson Solver (2D)}}
 \author{Nikos Tryfonidis}
 \date{2015}
+
 \maketitle
+
+
 
 \begin{abstract}
 The current report summarizes the structure, use and results of a two-dimensional Poisson solver, 
 created for the purpose of being integrated into a 2D Particle-In-Cell (PIC) code. After a brief introduction 
 regarding the numerical solution of the 2D Poisson PDE in chapter 1, the structure of the code will be 
 described in chapter 2. Verification of the code will be given in chapter 3, through a number of test cases. 
-Finally, the performance of the code will be discussed in chapter 4.
+Finally, the different iterative methods that have been implemented will be discussed in chapter 4, along with a review of their performance.
 \end{abstract}
 
 \tableofcontents
@@ -289,7 +292,7 @@ u(0,y) = 4y \quad \quad \quad & \quad \quad \quad u(x_L,y) = 3x_L + 4y
 
 Equation $(3.2a)$, along with boundary conditions $(3.2b)$ and $(3.2c)$ are also known as a Laplace problem, a special case of the Poisson problem with a zero right-hand-side function. We will now solve this Poisson problem and compare the numerical solution with the analytic $(3.1)$.
 
-\subsection{Setting Up The Problem}
+\subsection*{Setting Up The Problem}
 As explained in paragraph \emph{2.4}, the functions that are used to set up the desired Poisson problem are in \emph{setup.c}. Boundary conditions are given by the known solution \emph{(3.1)}, while the RHS function is zero for this problem. 
 \newline
 
@@ -311,12 +314,8 @@ double f(double x, double y)
 }
 \end{lstlisting}
 
-\subsection{Running the Solver}
-After we set up the problem as shown, we compile the program by typing "make" in the main project directory. 
-Then, we simply run the program by specifying how many grid points we want to divide our domain into. 
-\newline 
-
-To specify 101 grid points for $x$ and $y$, we run the executables as follows:
+\subsection*{Running the Solver}
+After we set up the problem as shown, we compile the program and run. To specify 101 grid points for $x$ and $y$, we run the executable as follows:
 
 \begin{lstlisting}
 ./poisson2D 101 101
@@ -348,7 +347,7 @@ Once the program has finished, output is ready in \emph{output/output.txt}. We c
 \label{fig:example1}
 \end{figure}
 
-We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $10^{-15}$. 
+We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $10^{-15}$ (machine precision, since with a constant right-hand-side we are effectively calculating averages). 
 
 \section{Simple Linear RHS}
 Now, we will solve a Poisson problem with a simple linear right-hand-side function. Let us assume that the (known) solution $u(x,y)$ is 
@@ -369,7 +368,7 @@ u(0,y) = y^2 \quad \quad \quad & \quad \quad \quad u(x_L,y) = (x_L)^2 + y^2
 
 We will now solve this Poisson problem and compare the numerical solution with the analytic $(3.4)$.
 
-\subsection{Setting Up The Problem}
+\subsection*{Setting Up The Problem}
 We set up the desired Poisson problem, as shown in the previous example, in \emph{setup.c}. Boundary conditions are given by the known solution \emph{(3.4)}, while the RHS function is equal to $4$ for this problem. 
 \newline
 
@@ -391,8 +390,8 @@ double f(double x, double y)
 }
 \end{lstlisting}
 
-\subsection{Running the Solver}
-We compile the program by typing "make" in the main project directory and run, once again, with 101 grid points in each dimension, as before:
+\subsection*{Running the Solver}
+We compile and run, once again, with 101 grid points in each dimension, as before:
 \newline 
 
 \begin{lstlisting}
@@ -425,7 +424,7 @@ We produce the surface plot of the results with \emph{visualize.py}. In the next
 \label{fig:example2}
 \end{figure}
 
-We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $10^{-16}$. 
+We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $10^{-16}$ (machine precision again, since with a constant right-hand-side we are effectively calculating averages). 
 
 \newpage
 \section{Sinusoidal RHS}
@@ -449,7 +448,7 @@ u(x_L,y) =  sin\left[ 2\pi \left( x_L + y\right) \right]
 
 We will now solve this Poisson problem and compare the numerical solution with the analytic $(3.6)$.
 
-\subsection{Setting Up The Problem}
+\subsection*{Setting Up The Problem}
 We set up the desired Poisson problem, as shown in the previous examples, in \emph{setup.c}. Boundary conditions are given by the known solution \emph{(3.6)}, while the RHS function is $f(x,y) =  -8\pi^2 sin\left[ 2\pi \left( x + y\right) \right]$ for this problem. 
 \newline
 
@@ -471,7 +470,7 @@ double f(double x, double y)
 }
 \end{lstlisting}
 
-\subsection{Running the Solver}
+\subsection*{Running the Solver}
 We compile the program and run with 101 grid points in each dimension, as before:
 \newline 
 
@@ -505,9 +504,57 @@ We produce the surface plot of the results with \emph{visualize.py}. In the next
 \label{fig:example3}
 \end{figure}
 
-We see that the numerical solution is identical to the analytic one, and the error is shown to be of the order of $O(h^2) = O(0.0001)$, where $h = \Delta x = \Delta y = 0.01$. 
+We see that the numerical solution is identical to the analytic one, and the error is shown to be, as expected, of the order of $O(h^2) = O(0.0001)$, where $h = \Delta x = \Delta y = 0.01$. 
 
-\chapter{Performance}
+\section{Minimizing the Error}
+As a last verification test, we will show that our solution becomes better (i.e. the error becomes smaller), as we refine our grid. We will use the previous section's Poisson problem to show this.
+\newline
+
+We will plot the error, using an increasing number of grid points. We expect the error to get smaller as $dx, dy$ become smaller. The results are shown in the following two figures:
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example4_10}
+  \caption{$N = 10 \quad (h = 0.1)$}
+\end{subfigure}
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example4_100}
+  \caption{$N = 100  \quad (h = 0.01)$}
+\end{subfigure}
+\caption{Error ($u_{analytic} - u_{numerical}$) for decreasing $h = dx = dy$. The error gets smaller as we go from 10 to 100 grid points (see axis scale).}
+\label{fig:example4.1}
+\end{figure}
+
+We notice that the error does get smaller as $h$ decreases, and also it is of order $O(h^2)$, as expected. Even smaller $h$ choices are shown in the next figure:
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example4_200}
+  \caption{$N = 200 \quad (h = 0.005)$}
+\end{subfigure}\\
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example4_500}
+  \caption{$N = 500 \quad (h = 0.002)$}
+\end{subfigure}
+\begin{subfigure}{0.5\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/example4_1000}
+  \caption{$N = 1000 \quad (h = 0.001)$}
+\end{subfigure}
+\caption{Error ($u_{analytic} - u_{numerical}$) for decreasing $h = dx = dy$. The error gets smaller as we go from 200 to 1000 grid points (see axis scale). }
+\label{fig:example4.2}
+\end{figure}
+
+\chapter{Iterative Methods}
+In this chapter, we will briefly describe the different iterative methods that have been implemented for the solution of the linear system of equations of the Poisson problem.
+\newline
+
 (Under Construction)
 
 

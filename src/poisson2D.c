@@ -26,7 +26,7 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
     
     /* Set tolerance (value for residual considered adequate), 
        maximum iterations and iterations per residual check */
-    tolerance = 1.0*dx*dy; // Some multiple of expected accuracy of scheme
+    tolerance = sqrt(nX*nY)*dx*dy; // Some multiple of expected accuracy of scheme
     maxIterations = 1000*nX*nY; // Some multiple of expected number of iterations to converge
     iterationsPerCheck = 100;
     nIterations = 0; //counter

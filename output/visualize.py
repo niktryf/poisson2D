@@ -41,11 +41,15 @@ fig.suptitle('')
 # Set x, y (put grid dimensions and step size here)
 X = np.arange(x_0, x_L + dx, dx)
 Y = np.arange(y_0, y_L + dy, dy)
-# Invert Y, X to agree with program output (x, y convention)
-Y, X = np.meshgrid(X, Y)
+# Create meshgrid, set indexing to C-style
+X, Y = np.meshgrid(X, Y, indexing='ij')
 
-# Analytic solution for comparison (if known)
+### Analytic solution for comparison (if known)
 #R = np.sin(2*np.pi*(X+Y))
+### Print global error (average absolute error) 
+#error = np.sqrt((a-R)*(a-R))
+#print "Expected order of error: O(%f,%f)" %(dx*dx, dy*dy)
+#print "Average Error: %f" %( np.sum(error)/(len(X)*len(Y)) )
 
 # Create surface plot
 # rstride, cstride: the input stride for rows and columns respectively,
