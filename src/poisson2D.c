@@ -27,8 +27,8 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
     /* Set tolerance (value for residual considered adequate), 
        maximum iterations and iterations per residual check */
     tolerance = sqrt(nX*nY)*dx*dy; // Some multiple of expected accuracy of scheme
-    maxIterations = 1000*nX*nY; // Some multiple of expected number of iterations to converge
-    iterationsPerCheck = 100;
+    maxIterations = 100*nX*nY; // Some multiple of expected number of iterations to converge
+    iterationsPerCheck = 1;
     nIterations = 0; //counter
 
     /* Iterate until residual < tolerance or until maxIterations are reached */
@@ -42,7 +42,7 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
         res = residual(array2D, rhs, dx, dy, nX, nY);
 
         // Test print for residual every "iterationsPerCheck"
-        //printf("iteration %d: residual = %f\ttolerance: %f\n", nIterations, res, tolerance);
+        printf("iteration %d: residual = %f\ttolerance: %f\n", nIterations, res, tolerance);
 
     } while (res > tolerance && nIterations <= maxIterations);
 
@@ -64,15 +64,14 @@ double residual(double **u, double **rhs, double dx, double dy, int nX, int nY) 
 
     res = 0;
     /* Calculate "A*x - rho" and then add to res. */
-    #pragma omp parallel for shared(u, rhs) private(i, j, Ax_r) firstprivate(dx, dy, nX, nY) reduction(+:res) default(none)
     for (i=1; i<nX-1; i++) {
         for (j=1; j<nY-1; j++) {    
             Ax_r = ( 1.0/(dx*dx)*(u[i-1][j]-2.0*u[i][j]+u[i+1][j]) +
                      1.0/(dy*dy)*(u[i][j-1]-2.0*u[i][j]+u[i][j+1]) -
                      rhs[i][j] );
-            res += sqrt(Ax_r*Ax_r);
+            res += Ax_r*Ax_r;
         }
     }
 
-    return res;
+    return sqrt(res);
 }

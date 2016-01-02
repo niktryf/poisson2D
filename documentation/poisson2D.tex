@@ -16,8 +16,6 @@
 
 \maketitle
 
-
-
 \begin{abstract}
 The current report summarizes the structure, use and results of a two-dimensional Poisson solver, 
 created for the purpose of being integrated into a 2D Particle-In-Cell (PIC) code. After a brief introduction 
@@ -36,7 +34,7 @@ The Poisson Equation and the associated boundary conditions form what is general
 \nabla ^2 u = u_{xx} + u_{yy} = f(x,y)
 \end{equation}
 
-The Poisson Problem is one of the most well-known Elliptic Partial Differential Equations (PDE). A brief description of the numerical method followed in the code will be given here. Detailed analysis of the Poisson PDE and other methods can be found in most numerical analysis textbooks (for example [1]).
+The Poisson Problem is one of the most well-known Elliptic Partial Differential Equations (PDE). A brief description of the numerical method followed in the code will be given here. Detailed analysis of the Poisson PDE and other methods can be found in most numerical analysis textbooks (for example \cite{leveque}).
 
 \section{The Finite Difference Scheme}
 The 5-point stencil discretization scheme is followed. A uniform Cartesian grid is used, where each point $x_i, y_j$ describes a point in 2D space, with $x_i = i\Delta x$ and $y_j = j\Delta y$. We assume that $0 \leq x \leq 1$ and $0 \leq y \leq 1$ for simplicity. Replacing the derivatives $u_{xx}$ and $u_{yy}$ in (1.1) with centered finite difference schemes, we end up with the following discretization scheme:
@@ -175,7 +173,7 @@ This linear system of equations can be solved with a variety of methods (direct,
 
 \section{Error and Stability}
 We will not go into the details of error and stability analysis in this report, since these are well-known 
-and can be found in most relevant texts (e.g. [1]). We should simply keep in mind that the local truncation error of the 5-point stencil finite difference scheme we are using is $O(h^2)$ and that the method is stable, so the global error of the method is also $O(h^2)$. In case we do not assume $\Delta x = \Delta y = h$, this 
+and can be found in most relevant texts (e.g. \cite{leveque}). We should simply keep in mind that the local truncation error of the 5-point stencil finite difference scheme we are using is $O(h^2)$ and that the method is stable, so the global error of the method is also $O(h^2)$. In case we do not assume $\Delta x = \Delta y = h$, this 
 simply means that the error is $O\left( (\Delta x)^2, (\Delta y)^2 \right)$.
 
 \chapter{The Code}
@@ -219,8 +217,8 @@ Also, another two-dimensional array of the same dimensions is the right-hand-sid
 To solve a given Poisson problem, the user must perform the following actions:
 
 \begin{enumerate}
-  \item Set Boundary Conditions in \emph{setBoundaries2D.c} (setup.c).
-  \item Set the RHS function of the Poisson problem in \emph{setRHS2D.c} (setup.c).
+  \item Set Boundary Conditions in \emph{setBoundaries2D} (setup.c).
+  \item Set the RHS function of the Poisson problem in \emph{setRHS2D} (setup.c).
   \item Choose the desired iterative method in main function (main.c).
   \item Compile the program by typing "make" in the main directory (where the makefile is located).
   \item Run the executable with the desired number of grid points in each of the two dimensions.
@@ -524,7 +522,7 @@ We will plot the error, using an increasing number of grid points. We expect the
   \includegraphics[width=1.0\linewidth]{images/example4_100}
   \caption{$N = 100  \quad (h = 0.01)$}
 \end{subfigure}
-\caption{Error ($u_{analytic} - u_{numerical}$) for decreasing $h = dx = dy$. The error gets smaller as we go from 10 to 100 grid points (see axis scale).}
+\caption{Error ($u_{analytic} - u_{numerical}$) for decreasing $h = dx = dy$. The error gets smaller as we go from 10 to 100 grid points (see Error axis range).}
 \label{fig:example4.1}
 \end{figure}
 
@@ -547,15 +545,27 @@ We notice that the error does get smaller as $h$ decreases, and also it is of or
   \includegraphics[width=1.0\linewidth]{images/example4_1000}
   \caption{$N = 1000 \quad (h = 0.001)$}
 \end{subfigure}
-\caption{Error ($u_{analytic} - u_{numerical}$) for decreasing $h = dx = dy$. The error gets smaller as we go from 200 to 1000 grid points (see axis scale). }
+\caption{Error ($u_{analytic} - u_{numerical}$) for decreasing $h = dx = dy$. The error gets smaller as we go from 200 to 1000 grid points (see Error axis range). }
 \label{fig:example4.2}
 \end{figure}
 
 \chapter{Iterative Methods}
-In this chapter, we will briefly describe the different iterative methods that have been implemented for the solution of the linear system of equations of the Poisson problem.
+In this chapter, we will briefly describe the different iterative methods that have been implemented for the solution of the linear system of equations of the Poisson problem. A detailed review of the iterative methods is outside the scope of this report, but can be found in most numerical PDE books (e.g. \cite{leveque}).
 \newline
 
 (Under Construction)
 
+
+
+
+
+
+
+\begin{thebibliography}{1}
+
+  \bibitem{leveque} Randall J. LeVeque {\em Finite Difference Methods for Ordinary and Partial Differential Equations.}  2007.
+
+
+  \end{thebibliography}
 
 \end{document}
