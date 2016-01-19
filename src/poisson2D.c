@@ -28,7 +28,7 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
        maximum iterations and iterations per residual check */
     tolerance = sqrt(nX*nY)*dx*dy; // Some multiple of expected accuracy of scheme
     maxIterations = 100*nX*nY; // Some multiple of expected number of iterations to converge
-    iterationsPerCheck = 1;
+    iterationsPerCheck = 10;
     nIterations = 0; //counter
 
     /* Iterate until residual < tolerance or until maxIterations are reached */
@@ -42,7 +42,7 @@ double **solvePoisson2D(double ** (*iterate)(double **, double **, double, doubl
         res = residual(array2D, rhs, dx, dy, nX, nY);
 
         // Test print for residual every "iterationsPerCheck"
-        printf("iteration %d: residual = %f\ttolerance: %f\n", nIterations, res, tolerance);
+        //printf("iteration %d: residual = %f\ttolerance: %f\n", nIterations, res, tolerance);
 
     } while (res > tolerance && nIterations <= maxIterations);
 
