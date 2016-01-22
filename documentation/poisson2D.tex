@@ -476,7 +476,7 @@ We compile the program and run with 101 grid points in each dimension, as before
 ./poisson2D 101 101
 \end{lstlisting}
 
-We produce the surface plot of the results with \emph{visualize.py}. In the next figure, the analytic and numerical solutions are shown side by side for comparison:
+We produce the surface plot of the results with \emph{visualize.py}. In the next figure, the analytic and numerical solutions are shown side by side for comparison. Also, the error surface plot is shown; this was created by plotting the difference of the analytic minus the numerical solution.
 
 \begin{figure}[h!]
 \centering
@@ -550,21 +550,134 @@ We notice that the error does get smaller as $h$ decreases, and also it is of or
 \end{figure}
 
 \chapter{Iterative Methods}
-In this chapter, we will briefly describe the different iterative methods that have been implemented for the solution of the linear system of equations of the Poisson problem. A detailed review of the iterative methods is outside the scope of this report, but can be found in most numerical PDE books (e.g. \cite{leveque}).
+In this chapter, we will briefly describe the different iterative methods that have been implemented for the solution of the linear system of equations of the Poisson problem. After that, a convergence review will be given for the methods. A detailed analysis of the iterative methods is outside the scope of this report, but can be found in most numerical PDE books (e.g. \cite{leveque}).
 \newline
 
-(Under Construction)
+The code for the iterative methods described in this chapter can be found in the \emph{iterative.c} source file. The desired iterative method can be chosen in \emph{main.c}, where it is passed as function pointer to the Poisson solver function.
 
+\section{Jacobi Method}
+The Jacobi method is the simplest iterative method that we will examine, and also the least efficient, as it has the slowest convergence. However, it is useful, not only as an example, but as a smoother in multigrid methods \cite{leveque}.
+\newline
 
+The Poisson problem we are solving can be written as follows, assuming that $dx = dy = h$, from equation (1.3): 
 
+\begin{equation}
+u_{i,j} = \frac{1}{4} \left(  u_{i-1, j} + u_{i+1, j} + u_{i, j-1} + u_{i, j+1}  \right) - \frac{h^2}{4}f_{i,j}
+\end{equation}
 
+The Jacobi method can be described by the following algorithm:
 
+\begin{equation}
+u_{i,j}^{k+1} = \frac{1}{4} \left(  u_{i-1, j}^k + u_{i+1, j}^k + u_{i, j-1}^k + u_{i, j+1}^k  \right) - \frac{h^2}{4}f_{i,j}
+\end{equation}
+
+where $u^{k}$ is the \emph{current} state of the solution, while $u^{k+1}$ is the new estimation. It is obvious that this method requires more memory, as the previous estimation of the solution has to be stored.
+\newline
+
+Alternatively, if we do not assume that $dx = dy$, as in equation (1.2), we write the Poisson problem as follows:
+
+\begin{equation}
+\begin{split}
+u_{i,j} \quad = & \quad \frac{1}{2(dx^2 + dy^2)} \left(  (u_{i-1, j} + u_{i+1, j})dy^2 + (u_{i, j-1} + u_{i, j+1})dx^2  \right)\\
+ & - \frac{dx^2 dy^2}{2(dx^2+dy^2)}f_{i,j}
+\end{split}
+\end{equation}
+
+and the Jacobi method is now 
+
+\begin{equation}
+\begin{split}
+u_{i,j}^{k+1} \quad = & \quad \frac{1}{2(dx^2 + dy^2)} \left(  (u_{i-1, j}^k + u_{i+1, j}^k)dy^2 + (u_{i, j-1}^k + u_{i, j+1}^k)dx^2  \right) \\
+& - \frac{dx^2 dy^2}{2(dx^2+dy^2)}f_{i,j}
+\end{split}
+\end{equation}
+
+\section{Gauss - Seidel Method}
+The Gauss-Seidel method is a variation of the Jacobi method; it improves the solution by using the already calculated values for the new estimation. This simply translates to the following algorithm:
+
+\begin{equation}
+u_{i,j}^{k+1} = \frac{1}{4} \left(  u_{i-1, j}^{k+1} + u_{i+1, j}^k + u_{i, j-1}^{k+1} + u_{i, j+1}^k  \right) - \frac{h^2}{4}f_{i,j}
+\end{equation}
+
+or, keeping $dx \neq dy$:
+
+\begin{equation}
+\begin{split}
+u_{i,j}^{k+1} \quad = & \quad \frac{1}{2(dx^2 + dy^2)} \left(  (u_{i-1, j}^{k+1} + u_{i+1, j}^k)dy^2 + (u_{i, j-1}^{k+1} + u_{i, j+1}^k)dx^2  \right) \\
+ & - \frac{dx^2 dy^2}{2(dx^2+dy^2)}f_{i,j}
+\end{split}
+\end{equation}
+
+The Gauss-Seidel method converges roughly twice as fast as the Jacobi method, and it does not require additional memory. However, it is less straightforward to parallelize (but can be parallelized using a red-black scheme \cite{karniadakis}).
+
+\section{Successive Overrelaxation}
+Successive overrelaxation (SOR) is an improvement on the Gauss-Seidel method, using an additional scalar parameter $\omega$, which is essentially moves the solution farther than Gauss-Seidel if $\omega > 1$ (and nearer if $\omega < 1$). SOR can be described by the following algorithm:
+
+\begin{equation}
+u_{i,j}^{k+1} = \frac{\omega}{2} \left(  u_{i-1, j}^{k+1} + u_{i+1, j}^k + u_{i, j-1}^{k+1} + u_{i, j+1}^k  \right) - \frac{h^2}{4}f_{i,j}
+\end{equation}
+
+and, in case that $dx \neq dy$:
+
+\begin{equation}
+\begin{split}
+u_{i,j}^{k+1} \quad = & \quad \omega \left[ \frac{1}{2(dx^2 + dy^2)} 
+\left(  (u_{i-1, j}^{k+1} + u_{i+1, j}^k)dy^2 + (u_{i, j-1}^{k+1} + u_{i, j+1}^k)dx^2  \right) \right.\\
+& \left. - \frac{dx^2 dy^2}{2(dx^2+dy^2)}f_{i,j} \right] + (1 - \omega) u_{i,j}^k
+\end{split}
+\end{equation}
+
+It should be mentioned that SOR is unstable for $\omega > 2$, while for $\omega = 1$ it is equivalent to the Gauss-Seidel method. Regarding the optimal choice for $\omega$, in general it depends on the problem (and may be hard to find). However, for the Poisson problem it can be shown that $\omega_{opt} \simeq 2 - 2 \pi h$ (\cite{leveque}, par. 4.2.2).
+
+\section{Residual Checking}
+Before commenting on the convergence of the previous methods, it will be useful to show the method followed in order to validate our iterative solution. The method followed is the well-known \emph{residual checking} method. This involves calculating the estimated solution between a fixed number of steps checking if the residual is smaller than a predetermined tolerance.
+\newline
+
+If $\bm{A}$ is the equation matrix and $\bm{u}$ is the estimated solution after a number of iterations, then
+
+\begin{equation}
+\bm{A} \bm{u} = \bm{f}_{est}
+\end{equation}
+
+But since we already know the right-hand values of our equations, we can quantify the correctness of our estimation by measuring how much our estimation differs from the actual right-hand side, by calculating the \emph{residual}:
+
+\begin{equation}
+r = \bm{A} \bm{u} - \bm{f}_{est}
+\end{equation}
+
+and stopping when it becomes smaller than some value that we set:
+
+\begin{equation}
+\sqrt{\sum_{i,j}r_{i,j}^2} < tolerance
+\end{equation}
+
+This procedure is carried out by the \emph{residual} function in \emph{src/poisson.c}.
+
+\section{Convergence Comparison}
+In this section we will show a brief comparison of the three iterative methods described in the revious sections. For this comparison, the Poisson problem shown in section (3.3) was solved, using $201 \times 201$ grid points.
+\newline
+
+To produce the following results, the program was altered slightly in order to output the residual in every iteration. Checking for the residual in every iteration is probably not worth the effort in general, but it is useful in order to evaluate the convergence of the three iterative methods.
+\newline
+
+We have set the maximum number of iterations to 1000 and the tolerance to zero; in this way, we can see the convergence of all three methods for 1000 iterations. Results are shown below using semi-log axes:
+\newline
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.75\linewidth]{images/residual}
+\caption{Residual versus number of iterations, for 3 different iterative methods (Jacobi, Gauss-Seidel, SOR). Problem size: $201 \times 201$}
+\label{fig:residual}
+\end{figure}
+
+We see that SOR is by far the most effective method. However, we should keep in mind that we are using the optimal $\omega$ value for SOR, which is known for this problem. Gauss-Seidel converges roughly twice as fast compared to Jacobi, something that is well known in general. Further analysis regarding the convergence of the iterative methods is outside the scope of this report, but can be found in \cite{leveque}, \cite{karniadakis}.
 
 
 \begin{thebibliography}{1}
 
   \bibitem{leveque} Randall J. LeVeque {\em Finite Difference Methods for Ordinary and Partial Differential Equations.}  2007.
 
+  \bibitem{karniadakis} George Em. Karniadakis, Robert M. Kirby {\em Parallel Scientific Computing in C++ and MPI.} 2003 
 
   \end{thebibliography}
 
