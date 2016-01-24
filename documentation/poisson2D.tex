@@ -21,7 +21,7 @@ The current report summarizes the structure, use and results of a two-dimensiona
 created for the purpose of being integrated into a 2D Particle-In-Cell (PIC) code. After a brief introduction 
 regarding the numerical solution of the 2D Poisson PDE in chapter 1, the structure of the code will be 
 described in chapter 2. Verification of the code will be given in chapter 3, through a number of test cases. 
-Finally, the different iterative methods that have been implemented will be discussed in chapter 4, along with a review of their performance.
+The different iterative methods that have been implemented are discussed in chapter 4, along with a brief review of their performance. Finally, the parallel implementation of the iterative solvers, using OpenMP threads, will be described in the fifth chapter, with a scaling performance review for each method.
 \end{abstract}
 
 \tableofcontents
@@ -672,12 +672,261 @@ We have set the maximum number of iterations to 1000 and the tolerance to zero; 
 
 We see that SOR is by far the most effective method. However, we should keep in mind that we are using the optimal $\omega$ value for SOR, which is known for this problem. Gauss-Seidel converges roughly twice as fast compared to Jacobi, something that is well known in general. Further analysis regarding the convergence of the iterative methods is outside the scope of this report, but can be found in \cite{leveque}, \cite{karniadakis}.
 
+\chapter{Parallel Poisson Solver}
+In this chapter, we will briefly show the parallel implementation of the Poisson solver in 2D, using OpenMP threads. A good review of OpenMP can be found in \cite{usingopenmp}. In this report, we will simply show the parallel implementation of the iterative solvers, along with their performance.
+
+It should be mentioned that the code is maintained with the OpenMP directives, which can just be omitted if serial execution is desired. Also, for the Jacobi method, a number of OpenMP optimizations have been made, which are described in the next section; the uploaded code only features the optimized version. All other methods have their corresponding OpenMP parallel functions, starting with "redBlack" (from the red-black partitioning scheme, explained in section 5.2). To run in parallel, the user should choose the desired parallel function and compile.
+
+OpenMP code can run as usual. First, we set the desired number of threads, for example for 4 threads we type:
+
+\begin{lstlisting}
+export OMP_NUM_THREADS=4
+\end{lstlisting}
+
+It is recommended, for systems using hyperthreading, to tie the threads to specific cores, using the command below (for this example using 4 threads):
+
+\begin{lstlisting}
+export GOMP_CPU_AFFINITY="0 1 2 3"
+\end{lstlisting}
+
+This ties the threads to the corresponding cores, ensuring that two different threads will not be assigned to a single hyperthreading core.
+
+\section{Parallel Jacobi}
+An initial parallelization of the Jacobi algorithm is very straightforward, and requires no further work. The OpenMP parallel version of the Jacobi method is shown below:
+
+\begin{lstlisting}
+#pragma omp parallel for schedule(static)\
+                         shared(u, u_old, f)\
+                         private(i,j)\
+                         firstprivate(nX, nY, dx, dy)\
+                         default(none)
+for(i=1;i<nX-1;i++) {
+  for(j=1;j<nY-1;j++) {
+     u[i][j] = ((dy*dy)*(u_old[i-1][j] + u_old[i+1][j]) + 
+               (dx*dx)*(u_old[i][j-1] + u_old[i][j+1]) - 
+               (dx*dx)*(dy*dy)*f[i][j])/(2.0*((dx*dx) + (dy*dy)));
+  }
+}
+\end{lstlisting}
+
+Arrays are declared as \emph{shared} and no additional synchronization is required, since each thread only reads from and writes to its own part of the arrays. Array boundaries \emph{(nX, nY)} and values for \emph{(dx, dy)} are declared as \emph{firstprivate}, so that each thread has its own copy of these, with the correct initialized values. Finally, a static schedule is chosen with no chunksize specified. This results in the workload being equally distributed to the threads, in chunks equal to threads in number (for example, if we use 4 threads, the arrays will be divided into 4 parts).
+\newline
+
+We also parallelize the residual check in \emph{poisson.c}, in the following way:
+
+\begin{lstlisting}
+#pragma omp parallel for schedule(static)\
+                         shared(u, rhs)\ 
+                         private(i, j, Ax_r)\
+                         firstprivate(nX, nY, dx, dy)\
+                         reduction(+:res)\
+                         default(none)
+for (i=1; i<nX-1; i++) {
+  for (j=1; j<nY-1; j++) {    
+    Ax_r = ( 1.0/(dx*dx)*(u[i-1][j]-2.0*u[i][j]+u[i+1][j]) +
+            1.0/(dy*dy)*(u[i][j-1]-2.0*u[i][j]+u[i][j+1]) -
+            rhs[i][j] );
+    res += Ax_r*Ax_r;
+  }
+}
+\end{lstlisting}
+
+The residual parallelization also takes place for the other iterative methods examined in the next sections. Apart from that, for the Jacobi method, we also parallelize the \emph{copyArray2D} function in \emph{iterative.c}. Without parallelizing the copy function, we end up in worse performance, due to poor cache memory distribution among threads.
+\newline
+
+Below we can see performance results for the OpenMP Jacobi method, for two different problem sizes.
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_time_101}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_speedup_101}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP Jacobi implementation (problem size: $101 \times 101$) }
+\label{fig:example5.1}
+\end{figure}
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_time_201}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_speedup_201}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP Jacobi implementation (problem size: $201 \times 201$) }
+\label{fig:example5.2}
+\end{figure}
+
+\subsection{An OpenMP Performance Optimization}
+We notice that performance is worse than ideal for the initial Jacobi OpenMP implementation, something that may be attributed to the additional parallel regions by the \emph{copyArray2D} function, and also by another important factor: the initialization of the "u\_ old" arrays in memory ("\emph{array2D\_ contiguous}" function), in each Jacobi iteration. In the above experiments, arrays were initialized serially. This, however, leads to poor cache memory utilization; if all threads took part in the initialization, then they would have the memory in their cache for the subsequent iterations. Also, as NUMA architectures are prevalent, it is possible that memory is placed in the NUMA region where it is initialized, leading to cluttered communication for threads, reading and writing to NUMA regions further than optimal.
+\newline
+
+To improve performance and bypass the obstacles above, we can simply do two things: first, join the copy and Jacobi iterations into one parallel region, using two separate OpenMP worksharing directives, one for each loop. In this way, we end up with half as many parallel regions opened and closed in each iteration, hopefully removing much of the overhead.
+\newline
+
+Second, we can do the array initialization to zero in parallel, in the \emph{array2D\_ contiguous}, in \emph{memory.c}. In this way, each thread will initialize the part of the array it will work on in the Jacobi iterations, both keeping that memory in cache and also in its corresponding NUMA region. It is, of course, important to keep the same worksharing schedule in all parallel regions, for obvious reasons; otherwise, each thread would possibly initialize another thread's array elements, negating the cache memory and NUMA advantages mentioned.
+\newline
+
+Doing the above, we repeat the performance tests and summarize the results in the following figures, showing both initial and optimized OpenMP versions (and also ideal/linear scaling).
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_time_101_opt}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_speedup_101_opt}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the optimized OpenMP Jacobi implementation (problem size: $101 \times 101$). The initial performance is also shown, for comparison. }
+\label{fig:example5.3}
+\end{figure}
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_time_201_opt}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/jacobi_speedup_201_opt}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the optimized OpenMP Jacobi implementation (problem size: $201 \times 201$). The initial speedup is also shown, for comparison. }
+\label{fig:example5.4}
+\end{figure}
+
+It is obvious that performance has clearly improved and is actually near the ideal performance, for the larger problem size. This was a good example of OpenMP optimization. Although that the Jacobi method was trivial to parallelize, it required a number of alterations to achieve good performance. It should be mentioned that the code is maintained \emph{with} the optimizations described here.
+
+\section{Parallel Gauss-Seidel}
+The Gauss-Seidel is less trivial to parallelize than Jacobi. In general, a \emph{red-black} (or \emph{checkerboard}) approach is followed, in which we update the grid elements in two separate groups ("red" and "black"), as in a checkerboard. We will not describe the method further in this report, but a good description can be found at \cite{karniadakis}.
+\newline
+
+The parallelized Gauss-Seidel algorithm can be found in the function \emph{redBlackGaussSeidelIteration2D}, in \emph{iterative.c}. Below we can see performance results for the Gauss-Seidel method in parallel, following the red-black scheme.
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/gauss_time_101}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/gauss_speedup_101}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP Gauss-Seidel implementation (problem size: $101 \times 101$). }
+\label{fig:example5.5}
+\end{figure}
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/gauss_time_201}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/gauss_speedup_201}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP Gauss-Seidel implementation (problem size: $201 \times 201$). }
+\label{fig:example5.6}
+\end{figure}
+
+\newpage
+
+We see that OpenMP performance for the Gauss-Seidel method is decent, especially for the larger problem size. Regarding the smaller problem size, the execution times show that the method requires few iterations to converge and, along with the small grid, this means that the workload is not so heavy to fully utilize all threads, for higher thread counts. Still, the OpenMP code manages to achieve speedup for all cases. We expect even larger problem sizes to scale even better, however such tests were not carried out for this report, in order to save core hours.
+
+\section{Parallel Successive Overrelaxation}
+Parallelizing the SOR method is very similar to parallelizing the Gauss-Seidel method. Again, we follow a \emph{red-black} scheme and the SOR OpenMP function is named \emph{"redBlackSORIteration2D"}, in \emph{iteration.c}, where the OpenMP code can be found. 
+\newline
+
+Due to the fact that SOR converges very fast for this Poisson problem, it is sensible (and possible) to show scaling tests for larger grids with this method. Performance results are shown in the following figures.
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/sor_time_101}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/sor_speedup_101}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP SOR implementation (problem size: $101 \times 101$). }
+\label{fig:example5.7}
+\end{figure}
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/sor_time_201}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/sor_speedup_201}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP Gauss-Seidel implementation (problem size: $201 \times 201$). }
+\label{fig:example5.7}
+\end{figure}
+
+\begin{figure}[th!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/sor_time_1001}
+  \caption{$Time$}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{images/sor_speedup_1001}
+  \caption{$Speedup$}
+\end{subfigure}
+\caption{Execution time and speedup for the OpenMP Gauss-Seidel implementation (problem size: $1001 \times 1001$). }
+\label{fig:example5.8}
+\end{figure}
+\newpage
+
+Again, sizes $101 \times 101$ and $201 \times 201$ follow a similar trend, achieving better scaling as the grid size increases. It is worth noticing how much faster the SOR method converges, taking 5\% of a second with a single thread for the smaller size.
+\newline
+
+However, the larger size of $1001 \times 1001$ is where the OpenMP parallel implementation truly shines, achieving practically ideal speedup, as shown in figure 5.9.b. This leads us to expect similar scaling behavior in the other iterative methods (although with much larger execution times).
+\newline
+
+
+
 
 \begin{thebibliography}{1}
 
   \bibitem{leveque} Randall J. LeVeque {\em Finite Difference Methods for Ordinary and Partial Differential Equations.}  2007.
 
   \bibitem{karniadakis} George Em. Karniadakis, Robert M. Kirby {\em Parallel Scientific Computing in C++ and MPI.} 2003 
+
+  \bibitem{usingopenmp} Barbara Chapman, Gabrielle Jost, Ruud Van Der Pas {\em Using OpenMP.} 2008.
 
   \end{thebibliography}
 

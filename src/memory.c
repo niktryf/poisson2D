@@ -11,10 +11,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 /* Allocates 2D dynamic array of doubles 
    with given dimensions, contiguous in memory. 
    Array is initialized to zeros.
+
+   Note: initialization is done in parallel with OpenMP,
+   mainly to achieve better cache utilization (and NUMA affinity)
+   when calling this function in the Jacobi method.
 */
 double **array2D_contiguous (int nRows, int nCols) 
 {
@@ -40,7 +45,9 @@ double **array2D_contiguous (int nRows, int nCols)
     array2D[i] = array2D[i-1] + nCols;
   }
 
-  //Initialize to zero:
+  // Initialize to zero:
+  #pragma omp parallel for schedule(static) shared(array2D) private(i, j)\
+                           firstprivate(nRows, nCols) default(none)
   for (i=0;i<nRows;i++) {
     for (j=0;j<nCols;j++) {
       array2D[i][j] = 0;

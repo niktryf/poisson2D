@@ -14,9 +14,6 @@
 
 #include "../headers/memory.h"
 
-double **copyArray2D(double **a, double **from, int nX, int nY); //Needed for Jacobi 
-
-
 /* - Jacobi Method.
    Performs a single Jacobi iteration over the 2D domain.
 
@@ -33,56 +30,32 @@ double **jacobiIteration2D(double **u, double **f,
     int i, j;
     double **u_old;
     u_old = array2D_contiguous (nX, nY);
-    u_old = copyArray2D(u_old, u, nX, nY); 
+    
+    #pragma omp parallel shared(u, u_old, f) private(i, j)\
+                         firstprivate(nX, nY, dx, dy) default(none)
+    {
+        // Copy previous u to u_old
+        #pragma omp for schedule(static)
+        for(i=0;i<nX;i++) {
+            for(j=0;j<nY;j++) {
+                u_old[i][j] = u[i][j];
+            }
+        }
+        // Jacobi iterations
+        #pragma omp for schedule(static)
+        for(i=1;i<nX-1;i++) {
+            for(j=1;j<nY-1;j++) {
 
-    #pragma omp parallel for schedule(static) shared(u, u_old, f) private(i,j)\
-                             firstprivate(nX, nY, dx, dy) default(none)
-    for(i=1;i<nX-1;i++) {
-        for(j=1;j<nY-1;j++) {
-
-            u[i][j] = ((dy*dy)*(u_old[i-1][j] + u_old[i+1][j]) + 
+                u[i][j] = ((dy*dy)*(u_old[i-1][j] + u_old[i+1][j]) + 
                              (dx*dx)*(u_old[i][j-1] + u_old[i][j+1]) - 
                              (dx*dx)*(dy*dy)*f[i][j])/(2.0*((dx*dx) + (dy*dy)) );
+            }
         }
     }
 
     free_array2D_contiguous(u_old);
     return u;
 }
-
-/* - Weighted Jacobi Method.
-   Performs a single weighted Jacobi iteration over the 2D domain.
-
-   Other than the given w factor, it is similar to the simple 
-   Jacobi method. Warning: used for w < 1.0 to under-relax! 
-   For w > 1.0 it is usually unstable!
-
-   Does NOT assume that dx = dy.
- */
-double **weightedJacobiIteration2D(double **u, double **f, 
-                           double dx, double dy, int nX, int nY)
-{
-    int i, j;
-    double w = 0.5;
-    double **u_old, u_tmp;
-    u_old = array2D_contiguous (nX, nY);
-    u_old = copyArray2D(u_old, u, nX, nY); 
-
-    #pragma omp parallel for schedule(static) shared(u, u_old, u_tmp, f) private(i,j)\
-                             firstprivate(nX, nY, dx, dy, w) default(none)
-    for(i=1;i<nX-1;i++) {
-        for(j=1;j<nY-1;j++) {
-            u_tmp = ((dy*dy)*(u_old[i-1][j] + u_old[i+1][j]) + 
-                             (dx*dx)*(u_old[i][j-1] + u_old[i][j+1]) - 
-                             (dx*dx)*(dy*dy)*f[i][j])/(2.0*((dx*dx) + (dy*dy)) );
-            u[i][j] = u_old[i][j] + w*(u_tmp - u_old[i][j]);
-        }
-    }
-
-    free_array2D_contiguous(u_old);
-    return u;
-}
-
 
 /* - Gauss-Seidel
    Performs a single Gauss-Seidel iteration over the 2D domain.
@@ -211,18 +184,4 @@ double **redBlackSORIteration2D(double **u, double **f,
     }
 
     return u;
-}
-
-/* Copies array and returns (needed for Jacobi) */
-double **copyArray2D(double **a, double **from, int nX, int nY) {
-    int i, j;
-    #pragma omp parallel for schedule(static) shared(a, from) private(i,j)\
-                             firstprivate(nX, nY) default(none)
-    for(i=0;i<nX;i++) {
-        for(j=0;j<nY;j++) {
-            a[i][j] = from[i][j];
-        }
-    }
-
-    return a;
 }
