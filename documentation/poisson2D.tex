@@ -768,6 +768,8 @@ Below we can see performance results for the OpenMP Jacobi method, for two diffe
 \label{fig:example5.2}
 \end{figure}
 
+\newpage
+
 \subsection{An OpenMP Performance Optimization}
 We notice that performance is worse than ideal for the initial Jacobi OpenMP implementation, something that may be attributed to the additional parallel regions by the \emph{copyArray2D} function, and also by another important factor: the initialization of the "u\_ old" arrays in memory ("\emph{array2D\_ contiguous}" function), in each Jacobi iteration. In the above experiments, arrays were initialized serially. This, however, leads to poor cache memory utilization; if all threads took part in the initialization, then they would have the memory in their cache for the subsequent iterations. Also, as NUMA architectures are prevalent, it is possible that memory is placed in the NUMA region where it is initialized, leading to cluttered communication for threads, reading and writing to NUMA regions further than optimal.
 \newline
@@ -795,6 +797,8 @@ Doing the above, we repeat the performance tests and summarize the results in th
 \caption{Execution time and speedup for the optimized OpenMP Jacobi implementation (problem size: $101 \times 101$). The initial performance is also shown, for comparison. }
 \label{fig:example5.3}
 \end{figure}
+
+\newpage
 
 \begin{figure}[th!]
 \centering
