@@ -894,7 +894,7 @@ Due to the fact that SOR converges very fast for this Poisson problem, it is sen
   \includegraphics[width=1.0\linewidth]{images/sor_speedup_201}
   \caption{$Speedup$}
 \end{subfigure}
-\caption{Execution time and speedup for the OpenMP Gauss-Seidel implementation (problem size: $201 \times 201$). }
+\caption{Execution time and speedup for the OpenMP SOR implementation (problem size: $201 \times 201$). }
 \label{fig:example5.7}
 \end{figure}
 
@@ -910,9 +910,10 @@ Due to the fact that SOR converges very fast for this Poisson problem, it is sen
   \includegraphics[width=1.0\linewidth]{images/sor_speedup_1001}
   \caption{$Speedup$}
 \end{subfigure}
-\caption{Execution time and speedup for the OpenMP Gauss-Seidel implementation (problem size: $1001 \times 1001$). }
+\caption{Execution time and speedup for the OpenMP SOR implementation (problem size: $1001 \times 1001$). }
 \label{fig:example5.8}
 \end{figure}
+
 \newpage
 
 Again, sizes $101 \times 101$ and $201 \times 201$ follow a similar trend, achieving better scaling as the grid size increases. It is worth noticing how much faster the SOR method converges, taking 5\% of a second with a single thread for the smaller size.
